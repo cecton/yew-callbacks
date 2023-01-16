@@ -308,6 +308,7 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
         .collect::<Vec<_>>();
 
     quote! {
+        #[derive(Debug)]
         struct #name<C: ::yew::html::BaseComponent> {
             link: ::yew::html::Scope<C>,
             #(#callbacks)*
@@ -322,6 +323,22 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
             }
 
             #(#constructors)*
+        }
+
+        impl<C: ::yew::html::BaseComponent<Message = #enum_name>> From<::yew::html::Scope<C>>
+            for #name<C>
+        {
+            fn from(link: ::yew::html::Scope<C>) -> Self {
+                Self::new(link)
+            }
+        }
+
+        impl<C: ::yew::html::BaseComponent<Message = #enum_name>> From<&::yew::html::Scope<C>>
+            for #name<C>
+        {
+            fn from(link: &::yew::html::Scope<C>) -> Self {
+                Self::new(link.to_owned())
+            }
         }
     }
 }
