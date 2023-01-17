@@ -1,6 +1,6 @@
 ![Rust](https://github.com/cecton/yew-callbacks/actions/workflows/rust.yml/badge.svg)
 [![Latest Version](https://img.shields.io/crates/v/yew-callbacks.svg)](https://crates.io/crates/yew-callbacks)
-![Rust 1.46+](https://img.shields.io/badge/rust-1.46%2B-orange.svg)
+![Rust 1.46+](https://img.shields.io/badge/rust-1.60%2B-orange.svg)
 ![License](https://img.shields.io/crates/l/yew-callbacks)
 [![Docs.rs](https://docs.rs/yew-callbacks/badge.svg)](https://docs.rs/yew-callbacks)
 [![LOC](https://tokei.rs/b1/github/cecton/yew-callbacks)](https://github.com/cecton/yew-callbacks)
