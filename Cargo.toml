@@ -5,6 +5,12 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Create and manage callbacks per component without creating duplicates"
 include = ["src/**/*.rs", "LICENSE.Apache-2.0", "LICENSE.MIT"]
+repository = "https://github.com/cecton/yew-callbacks"
+homepage = "https://github.com/cecton/yew-callbacks"
+documentation = "https://docs.rs/yew-callbacks"
+readme = "README.md"
+keywords = ["yew", "callback", "cache"]
+categories = ["rust-patterns"]
 
 [lib]
 proc-macro = true
