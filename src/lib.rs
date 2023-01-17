@@ -5,10 +5,10 @@
 //!
 //! ## But why
 //!
-//! Callbacks in Yew's components are easily to create but hard to manage. To avoid duplication you
+//! Callbacks in Yew's components are easy to create but hard to manage. To avoid duplication you
 //! should create them preemptively in the `create()` method of your component, store them in the
 //! state of your component, then pass clones to the children. Unfortunately this creates a lot of
-//! bloats.
+//! bloat.
 //!
 //! To address this, `yew-callbacks` provides a macro that will automatically create some kind of
 //! cache for your callbacks. You create this cache once in the `create()` method of your component
