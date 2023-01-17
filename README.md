@@ -16,7 +16,7 @@ Yet another crate nobody asked for.
 This crate provides a derive macro `Callbacks` that can be used on Yew enum messages to help
 managing callbacks.
 
-### But why
+## But why
 
 Callbacks in Yew's components are easy to create but hard to manage. To avoid duplication you
 should create them preemptively in the `create()` method of your component, store them in the
@@ -27,7 +27,7 @@ To address this, `yew-callbacks` provides a macro that will automatically create
 cache for your callbacks. You create this cache once in the `create()` method of your component
 and then you can use the methods to get your callbacks easily.
 
-#### Example
+### Example
 
 ```rust
 use yew::prelude::*;
@@ -63,7 +63,7 @@ impl Component for App {
 }
 ```
 
-### Why care
+## Why care
 
 Not perf.
 
@@ -72,11 +72,11 @@ Your children components will be updated if their properties changed. If you do
 update every time the parent component updates. This is because doing
 `ctx.link().callback(Msg::OnClick)` creates a new callback every time.
 
-### Handling multiple child components
+## Handling multiple child components
 
 This crate also allows currying the arguments of your callback.
 
-#### Example
+### Example
 
 ```rust
 use yew::prelude::*;
