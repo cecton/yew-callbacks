@@ -12,6 +12,7 @@ pub fn main(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
     let enum_name = &input.ident;
+    let vis = &input.vis;
     let e = match &input.data {
         syn::Data::Enum(e) => e,
         _ => abort_call_site!("`#[derive(Callbacks)]` only supports enums"),
@@ -135,11 +136,17 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
                 }
                 syn::Fields::Unnamed(syn::FieldsUnnamed {
                     unnamed: fields, ..
-                }) => {
+                })
+                | syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
+                    let is_named = fields.iter().any(|field| field.ident.is_some());
                     let idents = fields
                         .iter()
                         .enumerate()
-                        .map(|(i, _field)| Ident::new(&format!("arg_{i}"), Span::call_site()))
+                        .map(|(i, field)| {
+                            field.ident.clone().unwrap_or_else(|| {
+                                Ident::new(&format!("arg_{i}"), Span::call_site())
+                            })
+                        })
                         .collect::<Vec<_>>();
 
                     if curried_ty.is_some() {
@@ -165,21 +172,6 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
                             .zip(idents.iter())
                             .filter_map(|(field, ident)| (!is_curried(field)).then_some(ident))
                             .collect::<Vec<_>>();
-                        let cloned_args = fields
-                            .iter()
-                            .zip(idents.iter())
-                            .map(|(field, ident)| {
-                                if is_curried(field) {
-                                    quote! {
-                                        #ident.clone()
-                                    }
-                                } else {
-                                    quote! {
-                                        #ident
-                                    }
-                                }
-                            })
-                            .collect::<Vec<_>>();
                         let keys = args
                             .iter()
                             .map(|arg| {
@@ -188,114 +180,79 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
                                 }
                             })
                             .collect::<Vec<_>>();
+                        let constructor = if is_named {
+                            let cloned_args = fields
+                                .iter()
+                                .zip(idents.iter())
+                                .map(|(field, ident)| {
+                                    if is_curried(field) {
+                                        quote! {
+                                            #ident: #ident.clone()
+                                        }
+                                    } else {
+                                        quote! {
+                                            #ident
+                                        }
+                                    }
+                                })
+                                .collect::<Vec<_>>();
+
+                            quote! {
+                                #enum_name::#name { #(#cloned_args),* }
+                            }
+                        } else {
+                            let cloned_args = fields
+                                .iter()
+                                .zip(idents.iter())
+                                .map(|(field, ident)| {
+                                    if is_curried(field) {
+                                        quote! {
+                                            #ident.clone()
+                                        }
+                                    } else {
+                                        quote! {
+                                            #ident
+                                        }
+                                    }
+                                })
+                                .collect::<Vec<_>>();
+
+                            quote! {
+                                #enum_name::#name(#(#cloned_args),*)
+                            }
+                        };
 
                         quote! {
-                            fn #fn_name(&self #(, #args_sig )* ) -> ::yew::callback::Callback<#ty> {
+                            #vis fn #fn_name(&self #(, #args_sig )* )
+                                -> ::yew::callback::Callback<#ty>
+                            {
                                 self.#field_name
                                     .borrow_mut()
                                     .entry((#(#args),*))
                                     .or_insert_with_key(|(#(#args),*)| {
                                         #(#keys)*
-                                        self.link.callback(move |(#(#ins),*)| {
-                                            #enum_name::#name(#(#cloned_args),*)
-                                        })
+                                        self.link.callback(move |(#(#ins),*)| #constructor)
                                     })
                                     .clone()
                             }
                         }
                     } else {
+                        let constructor = if is_named {
+                            quote! {
+                                #enum_name::#name { #(#idents),* }
+                            }
+                        } else {
+                            quote! {
+                                #enum_name::#name(#(#idents),*)
+                            }
+                        };
+
                         quote! {
-                            fn #fn_name(&self) -> ::yew::callback::Callback<#ty> {
+                            #vis fn #fn_name(&self) -> ::yew::callback::Callback<#ty> {
                                 if self.#field_name.borrow().is_none() {
                                     self.#field_name.replace(Some(self
                                         .link
-                                        .callback(|(#(#idents),*)| {
-                                            #enum_name::#name(#(#idents),*)
-                                        })
-                                    ));
-                                }
-                                self.#field_name.borrow().clone().unwrap()
-                            }
-                        }
-                    }
-                }
-                // TODO a lot of code is common with the unnamed one
-                syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
-                    let idents = fields
-                        .iter()
-                        .map(|field| field.ident.as_ref().unwrap())
-                        .collect::<Vec<_>>();
-
-                    if curried_ty.is_some() {
-                        let args = fields
-                            .iter()
-                            .zip(idents.iter())
-                            .filter_map(|(field, ident)| is_curried(field).then_some(ident))
-                            .collect::<Vec<_>>();
-                        let args_sig = fields
-                            .iter()
-                            .zip(idents.iter())
-                            .filter(|(field, _)| is_curried(field))
-                            .map(|(field, ident)| {
-                                let ty = &field.ty;
-
-                                quote! {
-                                    #ident: #ty
-                                }
-                            })
-                            .collect::<Vec<_>>();
-                        let ins = fields
-                            .iter()
-                            .zip(idents.iter())
-                            .filter_map(|(field, ident)| (!is_curried(field)).then_some(ident))
-                            .collect::<Vec<_>>();
-                        let cloned_args = fields
-                            .iter()
-                            .zip(idents.iter())
-                            .map(|(field, ident)| {
-                                if is_curried(field) {
-                                    quote! {
-                                        #ident: #ident.clone()
-                                    }
-                                } else {
-                                    quote! {
-                                        #ident
-                                    }
-                                }
-                            })
-                            .collect::<Vec<_>>();
-                        let keys = args
-                            .iter()
-                            .map(|arg| {
-                                quote! {
-                                    let #arg = #arg.clone();
-                                }
-                            })
-                            .collect::<Vec<_>>();
-
-                        quote! {
-                            fn #fn_name(&self #(, #args_sig )* ) -> ::yew::callback::Callback<#ty> {
-                                self.#field_name
-                                    .borrow_mut()
-                                    .entry((#(#args),*))
-                                    .or_insert_with_key(|(#(#args),*)| {
-                                        #(#keys)*
-                                        self.link.callback(move |(#(#ins),*)| {
-                                            #enum_name::#name { #(#cloned_args),* }
-                                        })
-                                    })
-                                    .clone()
-                            }
-                        }
-                    } else {
-                        quote! {
-                            fn #fn_name(&self) -> ::yew::callback::Callback<#ty> {
-                                if self.#field_name.borrow().is_none() {
-                                    self.#field_name.replace(Some(self
-                                        .link
-                                        .callback(|(#(#idents),*)| {
-                                            #enum_name::#name { #(#idents),* }
-                                        })
+                                        .callback(|(#(#idents),*)| #constructor)
                                     ));
                                 }
                                 self.#field_name.borrow().clone().unwrap()
@@ -309,13 +266,13 @@ fn derive_callbacks(input: &syn::DeriveInput) -> TokenStream {
 
     quote! {
         #[derive(Debug)]
-        struct #name<C: ::yew::html::BaseComponent> {
+        #vis struct #name<C: ::yew::html::BaseComponent> {
             link: ::yew::html::Scope<C>,
             #(#callbacks)*
         }
 
         impl<C: ::yew::html::BaseComponent<Message = #enum_name>> #name<C> {
-            fn new(link: ::yew::html::Scope<C>) -> Self {
+            #vis fn new(link: ::yew::html::Scope<C>) -> Self {
                 Self {
                     link,
                     #(#inits)*

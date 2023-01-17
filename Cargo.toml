@@ -22,5 +22,5 @@ gloo = "0.8"
 serde = { version = "1", features = ["derive"] }
 strum = { version = "0.24", features = ["derive"] }
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
-xtask-wasm = { version = "0.1.9", features = ["run-example"] }
+xtask-wasm = { version = "0.1.10", features = ["run-example"] }
 yew = { version ="0.20", features = ["ssr", "csr"] }
