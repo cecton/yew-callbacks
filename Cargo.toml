@@ -3,8 +3,14 @@ name = "yew-callbacks"
 version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Create and manage callbacks per component easily"
+description = "Create and manage callbacks per component without creating duplicates"
 include = ["src/**/*.rs", "LICENSE.Apache-2.0", "LICENSE.MIT"]
+repository = "https://github.com/cecton/yew-callbacks"
+homepage = "https://github.com/cecton/yew-callbacks"
+documentation = "https://docs.rs/yew-callbacks"
+readme = "README.md"
+keywords = ["yew", "callback", "cache"]
+categories = ["rust-patterns"]
 
 [lib]
 proc-macro = true
@@ -22,5 +28,5 @@ gloo = "0.8"
 serde = { version = "1", features = ["derive"] }
 strum = { version = "0.24", features = ["derive"] }
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
-xtask-wasm = { version = "0.1.9", features = ["run-example"] }
+xtask-wasm = { version = "0.1.10", features = ["run-example"] }
 yew = { version ="0.20", features = ["ssr", "csr"] }
